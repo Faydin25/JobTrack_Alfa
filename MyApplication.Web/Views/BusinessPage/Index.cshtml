@@ -1,0 +1,129 @@
+﻿@model MyApplication.Web.Models.BusinessPageViewModel
+@using TaskStatus = MyApplication.Web.Models.TaskStatus
+
+<div class="container">
+    <h1 class="text-center">Görevler</h1>
+    <br />
+
+    <form method="get" asp-action="Index" asp-controller="BusinessPage">
+        <label for="userId">Kullanıcı Seçin:</label>
+        <select id="userId" name="userId" class="form-control" onchange="this.form.submit()">
+            <option value="">Tümü</option>
+            @foreach (var user in Model.Users)
+            {
+                var selected = (ViewContext.HttpContext.Request.Query["userId"] == user.Id.ToString()) ? "selected" : "";
+                @Html.Raw($"<option value=\"{user.Id}\" {selected}>{user.UserName}</option>")
+            }
+        </select>
+    </form>
+
+    @if (!string.IsNullOrEmpty(ViewContext.HttpContext.Request.Query["userId"]))
+    {
+        var selectedUser = Model.Users.FirstOrDefault(u => u.Id.ToString() == ViewContext.HttpContext.Request.Query["userId"]);
+        if (selectedUser != null)
+        {
+            <div class="alert alert-info mt-2 mb-2">
+                Seçili Kullanıcı: <b>@selectedUser.UserName</b>
+            </div>
+        }
+    }
+
+    <br />
+
+    <!-- Görev Oluşturma Butonu -->
+    <button class="btn btn-primary" data-toggle="modal" data-target="#taskModal">Görev Ekle</button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="taskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-action="CreateTask" asp-controller="BusinessPage" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Yeni Görev Ekle</h5>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" name="title" class="form-control mb-2" placeholder="Başlık" required />
+                        <textarea name="description" class="form-control mb-2" placeholder="Açıklama" required></textarea>
+                        <select name="status" class="form-control mb-2">
+                            @foreach (var status in Enum.GetValues(typeof(TaskStatus)))
+                            {
+                                <option value="@status">
+                                    @(status.ToString() == "ToDo" ? "Yapılacak" : status.ToString() == "InProgress" ? "Yapılıyor" : status.ToString() == "Done" ? "Tamamlandı" : status.ToString())
+                                </option>
+                            }
+                        </select>
+                        <select name="userId" class="form-control" required>
+                            @foreach (var user in Model.Users)
+                            {
+                                <option value="@user.Id">@user.UserName</option>
+                            }
+                        </select>
+                        <input type="date" name="deadline" class="form-control mb-2" required />
+                        <input type="file" name="attachment" class="form-control mb-2" accept=".pdf,.doc,.docx,image/*" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Ekle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <br /><br />
+
+    <div class="row">
+        @foreach (var status in Enum.GetValues(typeof(TaskStatus)))
+        {
+            <div class="col-md-4">
+                <h4 class="text-center">
+                    @(status.ToString() == "ToDo" ? "Yapılacak" : status.ToString() == "InProgress" ? "Yapılıyor" : status.ToString() == "Done" ? "Tamamlandı" : status.ToString())
+                </h4>
+                @foreach (var task in Model.Tasks.Where(t => t.Status == (TaskStatus)status))
+                {
+                    <div class="card mb-3">
+                        <div class="card-header">@task.Title</div>
+                        <div class="card-body">
+                            <form method="post" asp-action="EditDescription" asp-controller="BusinessPage">
+                                <input type="hidden" name="taskId" value="@task.TaskId" />
+                                <textarea name="description" class="form-control mb-2">@task.Description</textarea>
+                                <button class="btn btn-sm btn-warning">Açıklamayı Güncelle</button>
+                            </form>
+
+                            <p class="mt-2"><small>Oluşturulma: @task.CreatedDate.ToString("dd.MM.yyyy")</small></p>
+                            <p class="mt-2"><small>Son Teslim: @task.Deadline.ToString("dd.MM.yyyy")</small></p>
+                            @if (!string.IsNullOrEmpty(task.AttachmentPath))
+                            {
+                                <p class="mt-2"><a href="@task.AttachmentPath" target="_blank">Ek Dosyayı Görüntüle/İndir</a></p>
+                            }
+
+                            <!-- Statü değiştirme butonları -->
+                            <form method="post" asp-action="UpdateStatus" asp-controller="BusinessPage" class="mb-2">
+                                <input type="hidden" name="id" value="@task.TaskId" />
+                                @foreach (TaskStatus newStatus in Enum.GetValues(typeof(TaskStatus)))
+                                {
+                                    if (newStatus != task.Status)
+                                    {
+                                        <button name="status" value="@newStatus" class="btn btn-outline-secondary btn-sm mx-1">
+                                            @(newStatus.ToString() == "ToDo" ? "Yapılacak" : newStatus.ToString() == "InProgress" ? "Yapılıyor" : newStatus.ToString() == "Done" ? "Tamamlandı" : newStatus.ToString())
+                                        </button>
+                                    }
+                                }
+                            </form>
+
+                            <form method="post" asp-action="DeleteTask" asp-controller="BusinessPage" onsubmit="return confirm('Silmek istediğinizden emin misiniz?');">
+                                <input type="hidden" name="taskId" value="@task.TaskId" />
+                                <button class="btn btn-sm btn-danger">Sil</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+}

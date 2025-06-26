@@ -1,0 +1,135 @@
+﻿@model MyApplication.Web.Models.BusinessPageViewModel
+@using TaskStatus = MyApplication.Web.Models.TaskStatus;
+
+<div class="list-container">
+
+<!-- Filtre Çubuğu -->
+<form method="get" asp-action="TaskList" asp-controller="Home" class="form-inline mb-3">
+    <label for="userId" class="mr-2">Kullanıcı:</label>
+    <select id="userId" name="userId" class="form-control mr-3" onchange="this.form.submit()">
+        <option value="">Tümü</option>
+        @if (Model.Users != null)
+        {
+            foreach (var user in Model.Users)
+            {
+                var selected = ViewContext.HttpContext.Request.Query["userId"] == user.Id.ToString() ? "selected" : "";
+                @Html.Raw($"<option value=\"{user.Id}\" {selected}>{user.UserName}</option>")
+            }
+        }
+    </select>
+    <label for="status" class="mr-2">Durum:</label>
+    <select id="status" name="status" class="form-control mr-3" onchange="this.form.submit()">
+        <option value="">Tümü</option>
+        @foreach (TaskStatus status in Enum.GetValues(typeof(TaskStatus)))
+        {
+            var statusText = status == TaskStatus.ToDo ? "Yapılacak" : status == TaskStatus.InProgress ? "Yapılıyor" : status == TaskStatus.Done ? "Tamamlandı" : status.ToString();
+            var selected = ViewContext.HttpContext.Request.Query["status"] == ((int)status).ToString() ? "selected" : "";
+            @Html.Raw($"<option value=\"{(int)status}\" {selected}>{statusText}</option>")
+        }
+    </select>
+</form>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Task Adı</th>
+            <th>Açıklama</th>
+            <th>Durum</th>
+            <th>Kullanıcı</th>
+            <th>Oluşturulma Tarihi</th>
+            <th>Son Teslim Tarihi</th>
+            <th>Ek Dosya</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var task in Model.Tasks)
+        {
+            var isOverdue = task.Deadline < DateTime.Now && task.Status != TaskStatus.Done;
+            var rowClass = isOverdue ? "overdue-task" : GetStatusClass(task.Status);
+            <tr class="@rowClass">
+                <td>
+                    @task.Title
+                    @if (isOverdue)
+                    {
+                        <span title="Süresi Geçti" style="color:#ff2222;font-size:1.2em;margin-left:5px;">&#9888;</span>
+                    }
+                </td>
+                <td>@task.Description</td>
+                <td>@(task.Status == TaskStatus.ToDo ? "Yapılacak" : task.Status == TaskStatus.InProgress ? "Yapılıyor" : task.Status == TaskStatus.Done ? "Tamamlandı" : task.Status.ToString())</td>
+                <td>@(task.User?.UserName ?? "Kullanıcı Yok")</td>
+                <td>@task.CreatedDate.ToString("yyyy-MM-dd")</td>
+                <td>@task.Deadline.ToString("yyyy-MM-dd")</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(task.AttachmentPath))
+                    {
+                        <a href="@task.AttachmentPath" target="_blank">Görüntüle/İndir</a>
+                    }
+                    else
+                    {
+                        <span>-</span>
+                    }
+                </td>
+                <td>
+                    @if (task.Status == TaskStatus.ToDo && task.UserId == currentUserId)
+                    {
+                        <form method="post" asp-action="UpdateStatus" asp-controller="Home" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="taskId" value="@task.TaskId" />
+                            <input type="hidden" name="newStatus" value="InProgress" />
+                            <button type="submit" class="btn btn-primary btn-sm">Başlat</button>
+                        </form>
+                    }
+                    @if (task.Status == TaskStatus.InProgress && task.UserId == currentUserId)
+                    {
+                        <form method="post" asp-action="UpdateStatus" asp-controller="Home" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="taskId" value="@task.TaskId" />
+                            <input type="hidden" name="newStatus" value="Done" />
+                            <button type="submit" class="btn btn-primary btn-sm">Tamamla</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+</div>
+
+<style>
+    .overdue-task, .overdue-task td, .overdue-task th {
+        background-color: #e53935 !important;
+        color: #fff !important;
+        border-color: #b71c1c !important;
+        box-shadow: 0 0 4px #b71c1c33;
+    }
+    .table-warning, .table-primary, .table-success {
+        background-color: inherit !important;
+    }
+</style>
+
+@functions {
+    string GetStatusClass(TaskStatus status)
+    {
+        switch (status)
+        {
+            case TaskStatus.ToDo:
+                return "table-warning";  // Bootstrap sınıfı ile sarı
+            case TaskStatus.InProgress:
+                return "table-primary";  // Bootstrap sınıfı ile mavi
+            case TaskStatus.Done:
+                return "table-success";  // Bootstrap sınıfı ile yeşil
+            default:
+                return "";
+        }
+    }
+
+    int currentUserId
+    {
+        get
+        {
+            return int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+        }
+    }
+}
