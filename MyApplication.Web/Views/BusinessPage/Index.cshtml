@@ -80,7 +80,7 @@
         @foreach (var status in Enum.GetValues(typeof(TaskStatus)))
         {
             <div class="col-md-4 kanban-column" id="column-@status">
-                <h4 class="text-center fw-semibold mb-3 p-2 rounded-3 @GetHeaderClass(status)">
+                <h4 class="text-center fw-semibold mb-3 p-2 rounded-3 kanban-header">
                     <i class="@GetIconClass(status) me-2"></i>@(status.ToString() == "ToDo" ? "Yapılacak" : status.ToString() == "InProgress" ? "Yapılıyor" : "Tamamlandı")
                 </h4>
                 <div class="kanban-cards">
@@ -112,13 +112,7 @@
 @functions {
     string GetHeaderClass(object status)
     {
-        return (TaskStatus)status switch
-        {
-            TaskStatus.ToDo => "bg-warning text-dark",
-            TaskStatus.InProgress => "bg-primary text-white",
-            TaskStatus.Done => "bg-success text-white",
-            _ => "bg-secondary text-white"
-            };
+        return "kanban-header";
     }
 
     string GetIconClass(object status)
@@ -177,6 +171,10 @@
     }
     .drag-over {
         border: 2px dashed #0d6efd;
+    }
+    .kanban-header {
+        background: #22336b !important;
+        color: #fff !important;
     }
 </style>
 
