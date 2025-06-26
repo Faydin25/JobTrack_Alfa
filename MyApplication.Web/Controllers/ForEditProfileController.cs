@@ -17,9 +17,33 @@ namespace MyApplication.Web.Controllers
         {
             _context = context;
         }
-        public IActionResult Index()
+
+        [HttpGet]
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var userName = HttpContext.Session.GetString("UserName");
+            if (string.IsNullOrEmpty(userName))
+            {
+                return RedirectToAction("Index", "Home"); // Giriş yapılmamışsa ana sayfaya yönlendir
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var model = new EditProfileModel
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Email = user.Email,
+                DateOfBirth = user.DateOfBirth,
+                PhoneNumber = user.PhoneNumber,
+                PhotoPath = user.PhotoPath // PhotoPath'i modele ekle
+            };
+
+            return View(model);
         }
 
         [HttpPost]

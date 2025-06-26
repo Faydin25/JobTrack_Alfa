@@ -3,7 +3,10 @@
     ViewData["Title"] = "Yıllık İzin Başvurusu";
 }
 <div class="container mt-5">
-    <h2 class="mb-4">Yıllık İzin Başvurusu</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow-lg rounded-4 p-4">
+                <h2 class="mb-4 fw-bold text-primary text-center">Yıllık İzin Başvurusu</h2>
     <form asp-action="Request" method="post">
         <div class="mb-3">
             <label asp-for="StartDate" class="form-label">İzin Başlangıç Tarihi</label>
@@ -22,13 +25,20 @@
         </div>
         <div class="mb-3">
             <label asp-for="Description" class="form-label">Açıklama</label>
-            <textarea asp-for="Description" class="form-control"></textarea>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
             <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success px-4"><i class="bi bi-send"></i> Başvur</button>
+                        <a href="@Url.Action("MyLeaves", "Leave")" class="btn btn-secondary px-4"><i class="bi bi-arrow-left"></i> İzinlerim</a>
+                    </div>
+                </form>
+            </div>
         </div>
-        <button type="submit" class="btn btn-success">Başvur</button>
-        <a href="@Url.Action("MyLeaves", "Leave")" class="btn btn-secondary ms-2">İzinlerim</a>
-    </form>
+    </div>
 </div>
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 } 
+<!-- Bootstrap Icons CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"> 

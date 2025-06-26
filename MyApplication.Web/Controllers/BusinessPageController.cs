@@ -63,6 +63,20 @@ namespace MyApplication.Web.Controllers
         }
 
         [HttpPost]
+        public IActionResult UpdateTaskStatus(int taskId, ModelsTaskStatus newStatus)
+        {
+            var task = _context.Tasks.Find(taskId);
+            if (task == null)
+            {
+                return NotFound();
+            }
+
+            task.Status = newStatus;
+            _context.SaveChanges();
+            return Ok(); // AJAX isteği için başarı durumu döndür
+        }
+
+        [HttpPost]
         public IActionResult UpdateStatus(int id, ModelsTaskStatus status)
         {
             var task = _context.Tasks.Find(id);
